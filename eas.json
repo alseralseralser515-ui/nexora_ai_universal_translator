@@ -1,0 +1,42 @@
+{
+  "cli": {
+    "version": ">= 13.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SPEECH_PROVIDER": "native",
+        "EXPO_PUBLIC_TTS_PROVIDER": "native",
+        "EXPO_PUBLIC_TRANSLATION_PROVIDER": "mock"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SPEECH_PROVIDER": "native",
+        "EXPO_PUBLIC_TTS_PROVIDER": "native",
+        "EXPO_PUBLIC_TRANSLATION_PROVIDER": "mock"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_SPEECH_PROVIDER": "native",
+        "EXPO_PUBLIC_TTS_PROVIDER": "native",
+        "EXPO_PUBLIC_TRANSLATION_PROVIDER": "backend"
+      }
+    }
+  }
+}
