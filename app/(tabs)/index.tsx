@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AppState, Pressable, ScrollView, Text, TouchableOpacity, View, ImageBackground, Image, StyleSheet, Dimensions, Animated } from "react-native";
+import { AppState, Pressable, ScrollView, Text, TouchableOpacity, View, StyleSheet, Dimensions, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -102,8 +102,8 @@ export default function HomeScreen() {
   const stateDisplay = getStateDisplay(state, copy, colors);
 
   const styles = StyleSheet.create({
-    background: { width: '100%', height: Dimensions.get('window').height },
-    overlay: { backgroundColor: 'rgba(0,0,0,0.45)' },
+    // background removed - using native dark background colors and neon styles
+    overlay: { backgroundColor: 'transparent' },
     topRow: { marginTop: 44, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     iconButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' },
     header: { alignItems: 'center', marginTop: 8 },
@@ -131,8 +131,6 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer style={{ backgroundColor: '#06040a' }}>
-      {/* Decorative artwork layer - only decorative (reduced opacity) */}
-      <Image source={require('../../assets/images/nexora-ref.png')} style={[styles.background, {position: 'absolute', opacity: 0.28}]} resizeMode="cover" />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.overlay}>
           {/* Top bar */}
           <View style={styles.topRow}>
