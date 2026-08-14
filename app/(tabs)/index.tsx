@@ -130,68 +130,80 @@ export default function HomeScreen() {
   });
 
   return (
-    <ScreenContainer style={{ backgroundColor: 'transparent' }}>
-      <ImageBackground source={require("../../assets/images/nexora-ref.png")} style={styles.background} imageStyle={{ resizeMode: 'cover' }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.overlay}>
+    <ScreenContainer style={{ backgroundColor: '#06040a' }}>
+      {/* Decorative artwork layer - only decorative (reduced opacity) */}
+      <Image source={require('../../assets/images/nexora-ref.png')} style={[styles.background, {position: 'absolute', opacity: 0.28}]} resizeMode="cover" />
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.overlay}>
+          {/* Top bar */}
           <View style={styles.topRow}>
-            <Pressable style={styles.iconButton}><Ionicons name="menu" size={28} color="#b8c7ff" /></Pressable>
-            <Pressable style={styles.iconButton}><Ionicons name="settings" size={26} color="#ffb3ff" /></Pressable>
+            <Pressable style={styles.iconButton} onPress={() => { /* open menu */ }} accessibilityLabel="menu-button"><Ionicons name="menu" size={24} color="#a9c8ff" /></Pressable>
+            <View style={{alignItems:'center'}}>
+              <Text style={{color:'#9bd6ff', fontSize:20, fontWeight:'900', letterSpacing:2}}>NEXORA</Text>
+              <Text style={{color:'#ffd6f8', fontSize:11, fontWeight:'700'}}>AI TRANSLATOR</Text>
+            </View>
+            <Pressable style={styles.iconButton} onPress={() => { /* open settings */ }} accessibilityLabel="settings-button"><Ionicons name="settings" size={22} color="#ffb3ff" /></Pressable>
           </View>
 
-          {/* Header/logo is part of the approved background image. Avoid duplicating visual elements from the asset. */}
+          {/* Decorative artwork underneath - use image as decorative layer only */}
 
-          <View style={{height: 24}} />
+          <View style={{height: 10}} />
 
-          <View style={styles.centerCircleWrap}>
-            {/* The large 'READY TO TRANSLATE' card is part of the approved art — do not render a duplicate.
-                Render only interactive language selector (compact) above the microphone, and small controls to the sides. */}
-
-            <View style={styles.langRow}>
-              <View style={styles.langCard}>
-                <Text style={styles.langLabel}>{copy.sourceLanguage.toUpperCase()}</Text>
-                <Text style={styles.langValue}>{getLanguageName(languages.source)}</Text>
-              </View>
-              <Pressable onPress={() => {
-                const s = languages.source;
-                store.setSourceLanguage(languages.target || DEFAULT_TARGET_LANGUAGE);
-                store.setTargetLanguage(s);
-              }} style={styles.langSwap} accessibilityLabel="swap-languages">
-                <Ionicons name="swap-horizontal" size={28} color="#6be7ff" />
-              </Pressable>
-              <View style={styles.langCard}>
-                <Text style={styles.langLabel}>{copy.conversation.toUpperCase()}</Text>
-                <Text style={styles.langValue}>{languages.autoDetect ? 'AI Detect' : getLanguageName(languages.target)}</Text>
-              </View>
-            </View>
-
-            <View style={styles.micRow}>
-              <View style={styles.sideColumn}>
-                <Pressable onPress={() => { /* open history screen */ }} style={styles.smallCircle} accessibilityLabel="history-button"><Ionicons name="chatbox-ellipses" size={22} color="#cfd9ff" /></Pressable>
-                <Text style={styles.smallLabel}>{copy.conversation}</Text>
-                <Pressable onPress={() => void handleRepeatLastPress()} style={styles.smallCircle} accessibilityLabel="repeat-button"><Ionicons name="refresh" size={22} color="#cfd9ff" /></Pressable>
-                <Text style={styles.smallLabel}>{copy.repeatLast}</Text>
-              </View>
-
-              <Pressable onPress={handleMicrophonePress} style={styles.bigMic} accessibilityLabel="tap-to-speak">
-                <View style={styles.micOuter} />
-                <View style={styles.micInner}>
-                  <Ionicons name={(state === ConversationState.LISTENING || state === ConversationState.RECOGNIZING) ? 'mic' : 'mic-outline'} size={40} color="#fff" />
-                </View>
-              </Pressable>
-
-              <View style={styles.sideColumn}>
-                <Pressable onPress={() => { /* open settings */ }} style={styles.smallCircle} accessibilityLabel="settings-button"><Ionicons name="options" size={22} color="#cfd9ff" /></Pressable>
-                <Text style={styles.smallLabel}>Settings</Text>
-                <Pressable onPress={() => { /* open help */ }} style={styles.smallCircle} accessibilityLabel="help-button"><Ionicons name="help-circle" size={22} color="#cfd9ff" /></Pressable>
-                <Text style={styles.smallLabel}>Help</Text>
-              </View>
-            </View>
-
-            <Text style={styles.tapLabel}>TAP TO SPEAK</Text>
+          {/* READY TO TRANSLATE - prominent title */}
+          <View style={{marginTop: 8, alignItems:'center'}}>
+            <Text style={{color:'#7be3ff', fontSize:18, fontWeight:'900', letterSpacing:2}}>{(copy.ready ?? 'READY').toUpperCase()} TO TRANSLATE</Text>
+            <Text style={{color:'rgba(255,255,255,0.65)', marginTop:6}}>{copy.subtitle}</Text>
           </View>
 
+          {/* Language selector row (YOU SPEAK ↔ INTERLOCUTOR / AI Detect) */}
+          <View style={[styles.langRow, {alignSelf:'center', marginTop:12}]}> 
+            <View style={{flex:1}}>
+              <Text style={styles.langLabel}>{copy.sourceLanguage}</Text>
+              <Text style={styles.langValue}>{getLanguageName(languages.source)}</Text>
+            </View>
+            <Pressable onPress={() => {
+              const s = languages.source;
+              store.setSourceLanguage(languages.target || DEFAULT_TARGET_LANGUAGE);
+              store.setTargetLanguage(s);
+            }} style={styles.langSwap} accessibilityLabel="swap-languages">
+              <Ionicons name="swap-horizontal" size={28} color="#6be7ff" />
+            </Pressable>
+            <View style={{flex:1, alignItems:'flex-end'}}>
+              <Text style={styles.langLabel}>{copy.targetLanguage}</Text>
+              <Text style={styles.langValue}>{languages.autoDetect ? 'AI Detect' : getLanguageName(languages.target)}</Text>
+            </View>
+          </View>
+
+          {/* Central area with side action buttons and big neon mic */}
+          <View style={{flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginTop: 16}}>
+            <View style={{width:82, alignItems:'center'}}>
+              <Pressable onPress={() => { /* open history */ }} style={styles.smallCircle}><Ionicons name="time" size={22} color="#dfe9ff" /></Pressable>
+              <Text style={styles.smallLabel}>{copy.conversation}</Text>
+              <Pressable onPress={() => void handleRepeatLastPress()} style={[styles.smallCircle, {marginTop:12}]}><Ionicons name="repeat" size={22} color="#dfe9ff" /></Pressable>
+              <Text style={styles.smallLabel}>{copy.repeatLast}</Text>
+            </View>
+
+            <View style={{flex:1, alignItems:'center'}}>
+              <View style={[styles.micOuter, {shadowColor: '#7be3ff'}]}>
+                <Pressable onPress={handleMicrophonePress} accessibilityLabel="tap-to-speak">
+                  <View style={styles.micInner}>
+                    <Ionicons name={(state === ConversationState.LISTENING || state === ConversationState.RECOGNIZING) ? 'mic' : 'mic-outline'} size={46} color="#fff" />
+                  </View>
+                </Pressable>
+              </View>
+              <Text style={styles.tapLabel}>TAP TO SPEAK</Text>
+            </View>
+
+            <View style={{width:82, alignItems:'center'}}>
+              <Pressable onPress={() => { /* open settings */ }} style={styles.smallCircle}><Ionicons name="settings" size={22} color="#dfe9ff" /></Pressable>
+              <Text style={styles.smallLabel}>Settings</Text>
+              <Pressable onPress={() => { /* open help */ }} style={[styles.smallCircle, {marginTop:12}]}><Ionicons name="help-circle" size={22} color="#dfe9ff" /></Pressable>
+              <Text style={styles.smallLabel}>Help</Text>
+            </View>
+          </View>
+
+          {/* Action buttons row */}
           <View style={styles.actionRow}>
-            <TouchableOpacity onPress={handleMicrophonePress} disabled={!isInitialized || state !== ConversationState.IDLE} style={[styles.actionBtn, {backgroundColor: colors.primary}]}>
+            <TouchableOpacity onPress={handleMicrophonePress} disabled={!isInitialized || state !== ConversationState.IDLE} style={[styles.actionBtn, {backgroundColor: colors.primary}]}> 
               <Text style={styles.actionText}>{copy.startConversation}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => void engineRef.current?.pauseConversation()} style={[styles.actionBtn, {backgroundColor: '#2d2d35'}]}>
@@ -200,12 +212,20 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => void engineRef.current?.resumeConversation()} style={[styles.actionBtn, {backgroundColor: '#2d2d35'}]}>
               <Text style={styles.actionText}>{copy.resume}</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={handleStopPress} style={[styles.actionBtn, {backgroundColor: colors.error}]}>
+              <Text style={styles.actionText}>{copy.stop}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => void handleRepeatLastPress()} style={[styles.actionBtn, {backgroundColor: '#2d2d35'}]}>
+              <Text style={styles.actionText}>{copy.repeatLast}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleClearConversationPress} style={[styles.actionBtn, {backgroundColor: '#2d2d35'}]}>
+              <Text style={styles.actionText}>{copy.clearConversation}</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={{height:120}} />
 
         </ScrollView>
-      </ImageBackground>
     </ScreenContainer>
   );
 }
