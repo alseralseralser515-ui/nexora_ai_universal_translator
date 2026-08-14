@@ -26,21 +26,31 @@ export function resolveTranslationDirection(
   interlocutorLanguage: string,
 ): TranslationDirection {
   const detected = normalizeLanguageCode(detectedLanguage);
-  const user = userLanguage === "auto" ? "uk" : userLanguage;
-  const interlocutor = interlocutorLanguage === "auto" ? detected : interlocutorLanguage;
+  const user = normalizeLanguageCode(userLanguage === "auto" ? "uk" : userLanguage);
+  const interlocutor = normalizeLanguageCode(interlocutorLanguage === "auto" ? "en" : interlocutorLanguage);
 
   if (detected === user) {
     return {
       direction: "user_to_interlocutor",
-      sourceLanguage: user,
-      targetLanguage: interlocutor === user ? "en" : interlocutor,
+      sourceLanguage: detected,
+      targetLanguage: interlocutor,
     };
   }
 
+  if (detected === interlocutor) {
+    return {
+      direction: "interlocutor_to_user",
+      sourceLanguage: detected,
+      targetLanguage: user,
+    };
+  }
+
+  // For an unexpected third language, preserve the selected conversation pair:
+  // unknown speech is translated to the interlocutor language by default.
   return {
-    direction: "interlocutor_to_user",
+    direction: "user_to_interlocutor",
     sourceLanguage: detected,
-    targetLanguage: user,
+    targetLanguage: interlocutor,
   };
 }
 
@@ -206,24 +216,44 @@ export class ConversationEngine {
 
     const controller = store.startOperation("listen");
     try {
-      const locale = getLanguageLocale(store.sourceLanguage === "auto" ? store.targetLanguage : store.sourceLanguage);
-      const result = await this.providerFactory.getSpeechRecognition().startListening(
-        {
-          locale,
-          interimResults: true,
-          silenceTimeoutMs: 1400,
-          timeoutMs: this.config.timeout,
-          maxRetries: this.config.maxRetries,
-        },
-        controller.signal,
-      );
-      this.assertFresh(operationId);
-      if (!result.text.trim()) {
-        throw new Error("No speech recognized");
+      const locales = this.getRecognitionLocales();
+      let lastError: Error | null = null;
+      for (const locale of locales) {
+        try {
+          const result = await this.providerFactory.getSpeechRecognition().startListening(
+            {
+              locale,
+              interimResults: true,
+              silenceTimeoutMs: 1400,
+              timeoutMs: this.config.timeout,
+              maxRetries: this.config.maxRetries,
+            },
+            controller.signal,
+          );
+          this.assertFresh(operationId);
+          if (!result.text.trim()) {
+            throw new Error("No speech recognized");
+          }
+          store.setRecognizedText(result.text);
+          store.completeOperation();
+          return result;
+        } catch (error) {
+          lastError = error as Error;
+          if (
+            (error as Error).message.includes("cancelled") ||
+            (error as Error).message.includes("stale") ||
+            (error as Error).message.includes("permission") ||
+            (error as Error).message.includes("not-allowed")
+          ) {
+            throw error;
+          }
+          // On unsupported locale or no recognition, try the next candidate.
+        }
       }
-      store.setRecognizedText(result.text);
-      store.completeOperation();
-      return result;
+      if (lastError) {
+        throw lastError;
+      }
+      throw new Error("No speech recognized");
     } catch (error) {
       store.completeOperation();
       throw error;
@@ -231,6 +261,17 @@ export class ConversationEngine {
       store.setMicrophoneEnabled(false);
       await audioSessionManager.reset();
     }
+  }
+
+  private getRecognitionLocales(): string[] {
+    const store = this.store.getState();
+    // The two selected conversation languages must be attempted first.
+    // This avoids listening to Ukrainian/Russian speech with an English recognizer
+    // merely because English is the interlocutor language.
+    const userLanguage = store.sourceLanguage === "auto" ? "uk" : store.sourceLanguage;
+    const interlocutorLanguage = store.targetLanguage === "auto" ? "en" : store.targetLanguage;
+    const fallbackCodes = [userLanguage, interlocutorLanguage, "uk", "ru", "en"];
+    return Array.from(new Set(fallbackCodes.filter(Boolean).map(getLanguageLocale)));
   }
 
   private async processRecognizedText(operationId: string, recognized: SpeechRecognitionResult) {
@@ -242,7 +283,7 @@ export class ConversationEngine {
     this.assertFresh(operationId);
     store.setDetectedLanguage(detectedLanguage);
 
-    const direction = resolveTranslationDirection(detectedLanguage, store.targetLanguage, store.sourceLanguage);
+    const direction = resolveTranslationDirection(detectedLanguage, store.sourceLanguage, store.targetLanguage);
     store.setSpeakerDirection(direction.direction);
 
     await store.transitionTo(ConversationState.TRANSLATING);
