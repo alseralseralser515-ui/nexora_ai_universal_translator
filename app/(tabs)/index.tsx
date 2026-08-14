@@ -109,25 +109,21 @@ export default function HomeScreen() {
     header: { alignItems: 'center', marginTop: 8 },
     logoText: { color: '#9bd6ff', fontSize: 42, fontWeight: '800', letterSpacing: 4 },
     subtitle: { color: 'rgba(255,255,255,0.7)', marginTop: 6 },
-    centerCircleWrap: { paddingHorizontal: 20, marginTop: 24, alignItems: 'center' },
-    readyCard: { width: '92%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 18, paddingVertical: 16, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: 'rgba(123,70,255,0.14)' },
-    waveLeft: { width: 36, alignItems: 'center' },
-    waveRight: { width: 36, alignItems: 'center' },
-    readyTitle: { color: '#7be3ff', fontWeight: '700', fontSize: 16 },
-    readyHint: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
-    langRow: { width: '92%', marginTop: 14, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    centerCircleWrap: { paddingHorizontal: 20, marginTop: 8, alignItems: 'center' },
+    // readyCard and large header are part of the background art and must not be duplicated in the overlay
+    langRow: { width: '92%', marginTop: 6, backgroundColor: 'rgba(0,0,0,0.22)', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth:1, borderColor:'rgba(100,120,255,0.06)' },
     langCard: { flex: 1 },
-    langLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
-    langValue: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 6 },
+    langLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 11 },
+    langValue: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 6 },
     langSwap: { paddingHorizontal: 12, paddingVertical: 6 },
-    micRow: { width: '100%', marginTop: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    sideColumn: { width: 80, alignItems: 'center' },
-    smallCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center' },
-    smallLabel: { color: 'rgba(255,255,255,0.6)', marginTop: 8, fontSize: 12 },
+    micRow: { width: '100%', marginTop: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    sideColumn: { width: 84, alignItems: 'center' },
+    smallCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth:1, borderColor:'rgba(255,255,255,0.02)' },
+    smallLabel: { color: 'rgba(255,255,255,0.7)', marginTop: 8, fontSize: 12 },
     bigMic: { alignItems: 'center', justifyContent: 'center' },
-    micOuter: { width: 220, height: 220, borderRadius: 110, borderWidth: 6, borderColor: 'rgba(123,70,255,0.6)', shadowColor: '#7be3ff', shadowOpacity: 0.9 },
-    micInner: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(123,70,255,0.9)' },
-    tapLabel: { color: 'rgba(255,255,255,0.8)', marginTop: 12, fontWeight: '700' },
+    micOuter: { width: 180, height: 180, borderRadius: 90, borderWidth: 6, borderColor: 'rgba(123,70,255,0.7)', shadowColor: '#7be3ff', shadowOpacity: 0.9, alignItems:'center', justifyContent:'center' },
+    micInner: { position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(123,70,255,0.95)' },
+    tapLabel: { color: 'rgba(255,255,255,0.9)', marginTop: 14, fontWeight: '800' },
     actionRow: { width: '100%', marginTop: 22, flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 18 },
     actionBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
     actionText: { color: '#fff', fontWeight: '700' },
@@ -142,58 +138,51 @@ export default function HomeScreen() {
             <Pressable style={styles.iconButton}><Ionicons name="settings" size={26} color="#ffb3ff" /></Pressable>
           </View>
 
-          <View style={styles.header}>
-            <Text style={styles.logoText}>{copy.appTitle}</Text>
-            <Text style={styles.subtitle}>{copy.subtitle}</Text>
-          </View>
+          {/* Header/logo is part of the approved background image. Avoid duplicating visual elements from the asset. */}
+
+          <View style={{height: 24}} />
 
           <View style={styles.centerCircleWrap}>
-            <View style={styles.readyCard}>
-              <View style={styles.waveLeft}><Ionicons name="volume-high" size={20} color="#79f2ff" /></View>
-              <View style={{flex:1, alignItems:'center'}}>
-                <Text style={styles.readyTitle}>{(copy.ready ?? 'READY').toUpperCase()} TO TRANSLATE</Text>
-                <Text style={styles.readyHint}>Tap the microphone and start speaking</Text>
-              </View>
-              <View style={styles.waveRight}><Ionicons name="pulse" size={20} color="#ff67e0" /></View>
-            </View>
+            {/* The large 'READY TO TRANSLATE' card is part of the approved art — do not render a duplicate.
+                Render only interactive language selector (compact) above the microphone, and small controls to the sides. */}
 
             <View style={styles.langRow}>
               <View style={styles.langCard}>
-                <Text style={styles.langLabel}>YOU SPEAK</Text>
+                <Text style={styles.langLabel}>{copy.sourceLanguage.toUpperCase()}</Text>
                 <Text style={styles.langValue}>{getLanguageName(languages.source)}</Text>
               </View>
               <Pressable onPress={() => {
                 const s = languages.source;
                 store.setSourceLanguage(languages.target || DEFAULT_TARGET_LANGUAGE);
                 store.setTargetLanguage(s);
-              }} style={styles.langSwap}>
+              }} style={styles.langSwap} accessibilityLabel="swap-languages">
                 <Ionicons name="swap-horizontal" size={28} color="#6be7ff" />
               </Pressable>
               <View style={styles.langCard}>
-                <Text style={styles.langLabel}>INTERLOCUTOR</Text>
+                <Text style={styles.langLabel}>{copy.conversation.toUpperCase()}</Text>
                 <Text style={styles.langValue}>{languages.autoDetect ? 'AI Detect' : getLanguageName(languages.target)}</Text>
               </View>
             </View>
 
             <View style={styles.micRow}>
               <View style={styles.sideColumn}>
-                <Pressable onPress={() => { /* history */ }} style={styles.smallCircle}><Ionicons name="chatbox-ellipses" size={22} color="#cfd9ff" /></Pressable>
-                <Text style={styles.smallLabel}>History</Text>
-                <Pressable onPress={() => void handleRepeatLastPress()} style={styles.smallCircle}><Ionicons name="refresh" size={22} color="#cfd9ff" /></Pressable>
-                <Text style={styles.smallLabel}>Repeat</Text>
+                <Pressable onPress={() => { /* open history screen */ }} style={styles.smallCircle} accessibilityLabel="history-button"><Ionicons name="chatbox-ellipses" size={22} color="#cfd9ff" /></Pressable>
+                <Text style={styles.smallLabel}>{copy.conversation}</Text>
+                <Pressable onPress={() => void handleRepeatLastPress()} style={styles.smallCircle} accessibilityLabel="repeat-button"><Ionicons name="refresh" size={22} color="#cfd9ff" /></Pressable>
+                <Text style={styles.smallLabel}>{copy.repeatLast}</Text>
               </View>
 
-              <Pressable onPress={handleMicrophonePress} style={styles.bigMic}>
+              <Pressable onPress={handleMicrophonePress} style={styles.bigMic} accessibilityLabel="tap-to-speak">
                 <View style={styles.micOuter} />
                 <View style={styles.micInner}>
-                  <Ionicons name={(state === ConversationState.LISTENING || state === ConversationState.RECOGNIZING) ? 'mic' : 'mic-outline'} size={48} color="#fff" />
+                  <Ionicons name={(state === ConversationState.LISTENING || state === ConversationState.RECOGNIZING) ? 'mic' : 'mic-outline'} size={40} color="#fff" />
                 </View>
               </Pressable>
 
               <View style={styles.sideColumn}>
-                <Pressable onPress={() => { /* settings */ }} style={styles.smallCircle}><Ionicons name="options" size={22} color="#cfd9ff" /></Pressable>
+                <Pressable onPress={() => { /* open settings */ }} style={styles.smallCircle} accessibilityLabel="settings-button"><Ionicons name="options" size={22} color="#cfd9ff" /></Pressable>
                 <Text style={styles.smallLabel}>Settings</Text>
-                <Pressable onPress={() => { /* help */ }} style={styles.smallCircle}><Ionicons name="help-circle" size={22} color="#cfd9ff" /></Pressable>
+                <Pressable onPress={() => { /* open help */ }} style={styles.smallCircle} accessibilityLabel="help-button"><Ionicons name="help-circle" size={22} color="#cfd9ff" /></Pressable>
                 <Text style={styles.smallLabel}>Help</Text>
               </View>
             </View>
