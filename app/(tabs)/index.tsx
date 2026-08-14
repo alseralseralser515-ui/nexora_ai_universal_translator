@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AppState, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { AppState, Pressable, ScrollView, Text, TouchableOpacity, View, ImageBackground, Image, StyleSheet, Dimensions, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -101,161 +101,122 @@ export default function HomeScreen() {
 
   const stateDisplay = getStateDisplay(state, copy, colors);
 
+  const styles = StyleSheet.create({
+    background: { width: '100%', height: Dimensions.get('window').height },
+    overlay: { backgroundColor: 'rgba(0,0,0,0.45)' },
+    topRow: { marginTop: 44, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    iconButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' },
+    header: { alignItems: 'center', marginTop: 8 },
+    logoText: { color: '#9bd6ff', fontSize: 42, fontWeight: '800', letterSpacing: 4 },
+    subtitle: { color: 'rgba(255,255,255,0.7)', marginTop: 6 },
+    centerCircleWrap: { paddingHorizontal: 20, marginTop: 24, alignItems: 'center' },
+    readyCard: { width: '92%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 18, paddingVertical: 16, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: 'rgba(123,70,255,0.14)' },
+    waveLeft: { width: 36, alignItems: 'center' },
+    waveRight: { width: 36, alignItems: 'center' },
+    readyTitle: { color: '#7be3ff', fontWeight: '700', fontSize: 16 },
+    readyHint: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
+    langRow: { width: '92%', marginTop: 14, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    langCard: { flex: 1 },
+    langLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
+    langValue: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 6 },
+    langSwap: { paddingHorizontal: 12, paddingVertical: 6 },
+    micRow: { width: '100%', marginTop: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    sideColumn: { width: 80, alignItems: 'center' },
+    smallCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center' },
+    smallLabel: { color: 'rgba(255,255,255,0.6)', marginTop: 8, fontSize: 12 },
+    bigMic: { alignItems: 'center', justifyContent: 'center' },
+    micOuter: { width: 220, height: 220, borderRadius: 110, borderWidth: 6, borderColor: 'rgba(123,70,255,0.6)', shadowColor: '#7be3ff', shadowOpacity: 0.9 },
+    micInner: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(123,70,255,0.9)' },
+    tapLabel: { color: 'rgba(255,255,255,0.8)', marginTop: 12, fontWeight: '700' },
+    actionRow: { width: '100%', marginTop: 22, flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 18 },
+    actionBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+    actionText: { color: '#fff', fontWeight: '700' },
+  });
+
   return (
-    <ScreenContainer className="bg-background">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="flex-1">
-        <View className="flex-1 gap-6 p-6">
-          <View className="items-center gap-2">
-            <Text className="text-3xl font-bold text-foreground text-center">{copy.appTitle}</Text>
-            <Text className="text-base text-muted text-center">{copy.subtitle}</Text>
-            <Text className="text-xs text-muted">
-              {copy.providerMode}: speech {telemetry.providerMode.speech}, tts {telemetry.providerMode.textToSpeech}, translation {telemetry.providerMode.translation}
-            </Text>
+    <ScreenContainer style={{ backgroundColor: 'transparent' }}>
+      <ImageBackground source={require("../../assets/images/nexora-ref.png")} style={styles.background} imageStyle={{ resizeMode: 'cover' }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.overlay}>
+          <View style={styles.topRow}>
+            <Pressable style={styles.iconButton}><Ionicons name="menu" size={28} color="#b8c7ff" /></Pressable>
+            <Pressable style={styles.iconButton}><Ionicons name="settings" size={26} color="#ffb3ff" /></Pressable>
           </View>
 
-          <View className="bg-surface rounded-lg p-4 gap-4">
-            <LanguageSelector
-              label={copy.interfaceLanguage}
-              selected={languages.interfaceLanguage}
-              options={["uk", "ru", "en"]}
-              onSelect={(value) => store.setInterfaceLanguage(value as AppLocale)}
-            />
-            <LanguageSelector
-              label={copy.sourceLanguage}
-              selected={languages.source}
-              options={SUPPORTED_LANGUAGES.filter((language) => language.supportsSpeech).map((language) => language.code)}
-              onSelect={(value) => {
-                store.setSourceLanguage(value);
-                store.setAutoDetectLanguage(value === "auto");
-              }}
-            />
-            <LanguageSelector
-              label={copy.targetLanguage}
-              selected={languages.target || DEFAULT_TARGET_LANGUAGE}
-              options={SUPPORTED_LANGUAGES.filter((language) => language.code !== "auto" && language.supportsTts).map(
-                (language) => language.code,
-              )}
-              onSelect={store.setTargetLanguage}
-            />
+          <View style={styles.header}>
+            <Text style={styles.logoText}>{copy.appTitle}</Text>
+            <Text style={styles.subtitle}>{copy.subtitle}</Text>
           </View>
 
-          <View className="items-center gap-2">
-            <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: `${stateDisplay.color}20` }}>
-              <View className="w-12 h-12 rounded-full" style={{ backgroundColor: stateDisplay.color }} />
-            </View>
-            <Text className="text-lg font-semibold text-center" style={{ color: stateDisplay.color }}>
-              {stateDisplay.text}
-            </Text>
-          </View>
-
-          <View className="bg-surface rounded-lg p-4 gap-2">
-            <View className="flex-row justify-between items-center gap-4">
-              <Text className="text-sm text-muted">{copy.sourceLanguage}</Text>
-              <Text className="text-base font-semibold text-foreground">{getLanguageName(languages.source)}</Text>
-            </View>
-            <View className="h-px bg-border" />
-            <View className="flex-row justify-between items-center gap-4">
-              <Text className="text-sm text-muted">{copy.targetLanguage}</Text>
-              <Text className="text-base font-semibold text-foreground">{getLanguageName(languages.target)}</Text>
-            </View>
-          </View>
-
-          <View className="bg-surface rounded-lg p-4 gap-2">
-            <InfoRow label={copy.microphone} value={telemetry.microphoneEnabled ? "ON" : "OFF"} />
-            <InfoRow label={copy.detectedLanguage} value={telemetry.detectedLanguage ? getLanguageName(telemetry.detectedLanguage) : "-"} />
-            <InfoRow label={copy.sourceText} value={telemetry.recognizedText || "-"} />
-            <InfoRow label={copy.translatedText} value={telemetry.translatedText || "-"} />
-            <InfoRow
-              label={copy.speakerDirection}
-              value={telemetry.speakerDirection === "user_to_interlocutor" ? "User -> Interlocutor" : "Interlocutor -> User"}
-            />
-          </View>
-
-          {error && (
-            <View className="bg-error/10 border border-error rounded-lg p-4 gap-3">
-              <View className="flex-row items-start gap-3">
-                <Ionicons name="alert-circle" size={24} color={colors.error} />
-                <View className="flex-1 gap-1">
-                  <Text className="font-semibold text-foreground">{error.code}</Text>
-                  <Text className="text-sm text-muted">{error.message}</Text>
-                </View>
+          <View style={styles.centerCircleWrap}>
+            <View style={styles.readyCard}>
+              <View style={styles.waveLeft}><Ionicons name="volume-high" size={20} color="#79f2ff" /></View>
+              <View style={{flex:1, alignItems:'center'}}>
+                <Text style={styles.readyTitle}>{(copy.ready ?? 'READY').toUpperCase()} TO TRANSLATE</Text>
+                <Text style={styles.readyHint}>Tap the microphone and start speaking</Text>
               </View>
-              {error.recoverable && (
-                <TouchableOpacity onPress={handleRetryPress} className="bg-error px-4 py-2 rounded-lg items-center">
-                  <Text className="font-semibold text-background">{copy.retry}</Text>
-                </TouchableOpacity>
-              )}
+              <View style={styles.waveRight}><Ionicons name="pulse" size={20} color="#ff67e0" /></View>
             </View>
-          )}
 
-          {session && session.messages.length > 0 && (
-            <View className="bg-surface rounded-lg p-4 gap-3 max-h-64">
-              <Text className="text-sm font-semibold text-muted">{copy.conversation}</Text>
-              <ScrollView>
-                {session.messages.map((message) => (
-                  <View key={message.id} className="gap-1 pb-2 mb-2 border-b border-border">
-                    <View className="flex-row justify-between items-center">
-                      <Text className="text-xs text-muted">{getLanguageName(message.originalLanguage)}</Text>
-                      <Text className="text-xs text-muted">{new Date(message.timestamp).toLocaleTimeString()}</Text>
-                    </View>
-                    <Text className="text-sm text-foreground">{message.originalText}</Text>
-                    <View className="h-px bg-border my-1" />
-                    <Text className="text-xs text-muted">{getLanguageName(message.targetLanguage)}</Text>
-                    <Text className="text-sm text-primary font-medium">{message.translatedText}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          <View className="gap-3 mt-auto pb-4">
-            <View className="flex-row flex-wrap gap-2 justify-center">
-              <ActionButton label={copy.startConversation} onPress={handleMicrophonePress} disabled={!isInitialized || state !== ConversationState.IDLE} />
-              <ActionButton label={copy.pause} onPress={() => void engineRef.current?.pauseConversation()} disabled={state === ConversationState.IDLE || state === ConversationState.PAUSED} />
-              <ActionButton label={copy.resume} onPress={() => void engineRef.current?.resumeConversation()} disabled={state !== ConversationState.PAUSED} />
-              <ActionButton label={copy.stop} onPress={handleStopPress} disabled={state === ConversationState.IDLE} />
-              <ActionButton label={copy.repeatLast} onPress={handleRepeatLastPress} disabled={!session?.messages.length || telemetry.playbackActive} />
-              <ActionButton label={copy.clearConversation} onPress={handleClearConversationPress} disabled={!session?.messages.length} />
-            </View>
-            <View className="flex-row gap-4 items-center justify-center">
-            <Pressable
-              onPress={handleMicrophonePress}
-              disabled={!isInitialized}
-              style={({ pressed }) => [
-                {
-                  backgroundColor: colors.primary,
-                  opacity: pressed ? 0.8 : 1,
-                  transform: [{ scale: pressed ? 0.95 : 1 }],
-                },
-              ]}
-              className="w-20 h-20 rounded-full items-center justify-center"
-            >
-              <Ionicons
-                name={state === ConversationState.LISTENING || state === ConversationState.RECOGNIZING ? "mic" : "mic-off"}
-                size={32}
-                color={colors.background}
-              />
-            </Pressable>
-
-            {state !== ConversationState.IDLE && (
-              <Pressable
-                onPress={handleStopPress}
-                style={({ pressed }) => [
-                  {
-                    backgroundColor: colors.error,
-                    opacity: pressed ? 0.8 : 1,
-                    transform: [{ scale: pressed ? 0.95 : 1 }],
-                  },
-                ]}
-                className="w-16 h-16 rounded-full items-center justify-center"
-              >
-                <Ionicons name="stop" size={24} color={colors.background} />
+            <View style={styles.langRow}>
+              <View style={styles.langCard}>
+                <Text style={styles.langLabel}>YOU SPEAK</Text>
+                <Text style={styles.langValue}>{getLanguageName(languages.source)}</Text>
+              </View>
+              <Pressable onPress={() => {
+                const s = languages.source;
+                store.setSourceLanguage(languages.target || DEFAULT_TARGET_LANGUAGE);
+                store.setTargetLanguage(s);
+              }} style={styles.langSwap}>
+                <Ionicons name="swap-horizontal" size={28} color="#6be7ff" />
               </Pressable>
-            )}
+              <View style={styles.langCard}>
+                <Text style={styles.langLabel}>INTERLOCUTOR</Text>
+                <Text style={styles.langValue}>{languages.autoDetect ? 'AI Detect' : getLanguageName(languages.target)}</Text>
+              </View>
             </View>
+
+            <View style={styles.micRow}>
+              <View style={styles.sideColumn}>
+                <Pressable onPress={() => { /* history */ }} style={styles.smallCircle}><Ionicons name="chatbox-ellipses" size={22} color="#cfd9ff" /></Pressable>
+                <Text style={styles.smallLabel}>History</Text>
+                <Pressable onPress={() => void handleRepeatLastPress()} style={styles.smallCircle}><Ionicons name="refresh" size={22} color="#cfd9ff" /></Pressable>
+                <Text style={styles.smallLabel}>Repeat</Text>
+              </View>
+
+              <Pressable onPress={handleMicrophonePress} style={styles.bigMic}>
+                <View style={styles.micOuter} />
+                <View style={styles.micInner}>
+                  <Ionicons name={(state === ConversationState.LISTENING || state === ConversationState.RECOGNIZING) ? 'mic' : 'mic-outline'} size={48} color="#fff" />
+                </View>
+              </Pressable>
+
+              <View style={styles.sideColumn}>
+                <Pressable onPress={() => { /* settings */ }} style={styles.smallCircle}><Ionicons name="options" size={22} color="#cfd9ff" /></Pressable>
+                <Text style={styles.smallLabel}>Settings</Text>
+                <Pressable onPress={() => { /* help */ }} style={styles.smallCircle}><Ionicons name="help-circle" size={22} color="#cfd9ff" /></Pressable>
+                <Text style={styles.smallLabel}>Help</Text>
+              </View>
+            </View>
+
+            <Text style={styles.tapLabel}>TAP TO SPEAK</Text>
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity onPress={handleMicrophonePress} disabled={!isInitialized || state !== ConversationState.IDLE} style={[styles.actionBtn, {backgroundColor: colors.primary}]}>
+              <Text style={styles.actionText}>{copy.startConversation}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => void engineRef.current?.pauseConversation()} style={[styles.actionBtn, {backgroundColor: '#2d2d35'}]}>
+              <Text style={styles.actionText}>{copy.pause}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => void engineRef.current?.resumeConversation()} style={[styles.actionBtn, {backgroundColor: '#2d2d35'}]}>
+              <Text style={styles.actionText}>{copy.resume}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{height:120}} />
+
+        </ScrollView>
+      </ImageBackground>
     </ScreenContainer>
   );
 }
