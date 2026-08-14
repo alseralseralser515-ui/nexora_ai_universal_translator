@@ -82,6 +82,12 @@ export interface ConversationStore {
   isLoading: boolean;
   retryCount: number;
   maxRetries: number;
+  speechRate: number;
+  autoTtsPlayback: boolean;
+  translationStyle: "natural" | "literal" | "formal";
+  phraseEndPauseMs: number;
+  localHistorySaving: boolean;
+  privacyMode: boolean;
 }
 
 export type SpeakerDirection = "user_to_interlocutor" | "interlocutor_to_user";

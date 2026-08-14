@@ -175,6 +175,17 @@ describe("ConversationEngine", () => {
   });
 });
 
+describe("conversation recovery", () => {
+  it("returns from a recoverable error to a fresh cycle", async () => {
+    const engine = new ConversationEngine({ providerFactory: factory({ speech: new FakeSpeech(new Error("recognition failed")) }) });
+    await engine.startConversation();
+    expect(useConversationStore.getState().state).toBe(ConversationState.ERROR);
+    useConversationStore.getState().clearError();
+    await engine.startConversation();
+    expect(useConversationStore.getState().state).toBe(ConversationState.ERROR);
+  });
+});
+
 describe("translation direction", () => {
   it("chooses interlocutor to user when detected language differs from user language", () => {
     expect(resolveTranslationDirection("uk", "en", "uk")).toEqual({

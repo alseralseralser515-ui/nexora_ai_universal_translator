@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
-import { getLanguageLocale, normalizeLanguageCode } from "@/lib/config/languages";
+import { getLanguageLocale, isSupportedLanguage, normalizeLanguageCode } from "@/lib/config/languages";
 import { audioSessionManager } from "../audio/audio-session-manager";
 import { getProviderFactory, ProviderFactory } from "../providers/factory";
 import type { SpeechRecognitionResult } from "../providers/interfaces";
@@ -71,9 +71,17 @@ export class ConversationEngine {
   }
 
   async startConversation(): Promise<void> {
-    const state = this.store.getState().state;
+    let state = this.store.getState().state;
     if (this.activeRun || state === ConversationState.RECOGNIZING || state === ConversationState.TRANSLATING || state === ConversationState.SPEAKING) {
       return;
+    }
+    if (state === ConversationState.ERROR) {
+      await this.store.getState().transitionTo(ConversationState.RETRYING);
+      await this.store.getState().transitionTo(ConversationState.IDLE);
+      state = ConversationState.IDLE;
+    } else if (state === ConversationState.STOPPED) {
+      await this.store.getState().transitionTo(ConversationState.IDLE);
+      state = ConversationState.IDLE;
     }
     this.stopped = false;
     this.activeRun = this.runConversationLoop();
@@ -168,7 +176,9 @@ export class ConversationEngine {
       }
       const recognized = await this.listen(operationId);
       const processed = await this.processRecognizedText(operationId, recognized);
-      await this.speak(processed.translatedText, processed.targetLanguage, operationId);
+      if (this.store.getState().autoTtsPlayback) {
+        await this.speak(processed.translatedText, processed.targetLanguage, operationId);
+      }
       this.assertFresh(operationId);
       if (!this.stopped) {
         await this.store.getState().transitionTo(ConversationState.LISTENING);
@@ -224,7 +234,7 @@ export class ConversationEngine {
             {
               locale,
               interimResults: true,
-              silenceTimeoutMs: 1400,
+              silenceTimeoutMs: this.store.getState().phraseEndPauseMs,
               timeoutMs: this.config.timeout,
               maxRetries: this.config.maxRetries,
             },
@@ -278,9 +288,20 @@ export class ConversationEngine {
     const store = this.store.getState();
     await store.transitionTo(ConversationState.DETECTING_LANGUAGE);
     const detectController = store.startOperation("detect");
-    const detectedLanguage = await this.providerFactory.getLanguageDetection().detectLanguage(recognized.text, detectController.signal);
-    store.completeOperation();
+    let detectedLanguage: string;
+    try {
+      detectedLanguage = store.autoDetectLanguage
+        ? await this.providerFactory.getLanguageDetection().detectLanguage(recognized.text, detectController.signal)
+        : normalizeLanguageCode(recognized.locale || store.sourceLanguage);
+      store.completeOperation();
+    } catch (error) {
+      store.completeOperation();
+      throw new Error(`Language detection failed: ${(error as Error).message}`);
+    }
     this.assertFresh(operationId);
+    if (!isSupportedLanguage(detectedLanguage) || detectedLanguage === "auto") {
+      throw new Error(`Unsupported detected language: ${detectedLanguage}`);
+    }
     store.setDetectedLanguage(detectedLanguage);
 
     const direction = resolveTranslationDirection(detectedLanguage, store.sourceLanguage, store.targetLanguage);
@@ -322,7 +343,7 @@ export class ConversationEngine {
         text,
         language,
         {
-          rate: this.config.speechRate,
+          rate: this.store.getState().speechRate || this.config.speechRate,
           onStart: () => store.setPlaybackActive(true),
           onDone: () => store.setPlaybackActive(false),
           onStopped: () => store.setPlaybackActive(false),
@@ -355,15 +376,20 @@ export class ConversationEngine {
   private async handleConversationError(error: Error): Promise<void> {
     const store = this.store.getState();
     const message = error.message || "Conversation failed";
-    const code = message.includes("permission")
+    const lower = message.toLowerCase();
+    const code = lower.includes("permission") || lower.includes("microphone")
       ? ConversationErrorCode.MICROPHONE_PERMISSION_DENIED
-      : message.includes("speech") || message.includes("recogn")
-        ? ConversationErrorCode.SPEECH_RECOGNITION_FAILED
-        : message.includes("speak") || message.includes("playback")
-          ? ConversationErrorCode.TEXT_TO_SPEECH_FAILED
-          : message.includes("translation") || message.includes("translate")
-            ? ConversationErrorCode.TRANSLATION_FAILED
-            : ConversationErrorCode.UNKNOWN;
+      : lower.includes("detection") || lower.includes("language")
+        ? ConversationErrorCode.LANGUAGE_DETECTION_FAILED
+        : lower.includes("timeout") || lower.includes("timed out")
+          ? ConversationErrorCode.TIMEOUT
+          : lower.includes("speech") || lower.includes("recogn")
+            ? ConversationErrorCode.SPEECH_RECOGNITION_FAILED
+            : lower.includes("speak") || lower.includes("playback") || lower.includes("tts")
+              ? ConversationErrorCode.TEXT_TO_SPEECH_FAILED
+              : lower.includes("translation") || lower.includes("translate") || lower.includes("network") || lower.includes("request failed")
+                ? ConversationErrorCode.TRANSLATION_FAILED
+                : ConversationErrorCode.UNKNOWN;
 
     store.setError(code, message, true, { originalError: message });
     await store.transitionTo(ConversationState.ERROR);

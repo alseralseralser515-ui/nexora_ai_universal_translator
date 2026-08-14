@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -30,12 +31,18 @@ export default function HomeScreen() {
   const copy = t(languages.interfaceLanguage);
   const engineRef = useRef<ConversationEngine | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const historyKey = "nexora.history.v1";
 
   useEffect(() => {
+    void AsyncStorage.getItem(historyKey).then((raw) => {
+      if (!raw || store.privacyMode) return;
+      try { store.restoreSession(JSON.parse(raw)); } catch { /* Ignore malformed local history. */ }
+    });
+
     ProviderFactory.getInstance().initialize({
-      speechProvider: process.env.EXPO_PUBLIC_SPEECH_PROVIDER === "native" ? "native" : "mock",
-      textToSpeechProvider: process.env.EXPO_PUBLIC_TTS_PROVIDER === "native" ? "native" : "mock",
-      translationProvider: process.env.EXPO_PUBLIC_TRANSLATION_PROVIDER === "backend" ? "backend" : "mock",
+      speechProvider: process.env.EXPO_PUBLIC_SPEECH_PROVIDER === "mock" ? "mock" : "native",
+      textToSpeechProvider: process.env.EXPO_PUBLIC_TTS_PROVIDER === "mock" ? "mock" : "native",
+      translationProvider: process.env.EXPO_PUBLIC_TRANSLATION_PROVIDER === "mock" ? "mock" : "backend",
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
       speechRate: Number(process.env.EXPO_PUBLIC_SPEECH_RATE ?? 0.95),
       timeout: 30000,
@@ -61,6 +68,11 @@ export default function HomeScreen() {
       void engineRef.current?.cleanup();
     };
   }, [setProviderMode]);
+
+  useEffect(() => {
+    if (!store.localHistorySaving || store.privacyMode || !session) return;
+    void AsyncStorage.setItem(historyKey, JSON.stringify(session));
+  }, [session, store.localHistorySaving, store.privacyMode]);
 
   const handleMicrophonePress = async () => {
     if (!engineRef.current) return;
@@ -121,7 +133,7 @@ export default function HomeScreen() {
               onSelect={(value) => store.setInterfaceLanguage(value as AppLocale)}
             />
             <LanguageSelector
-              label={copy.sourceLanguage}
+              label={copy.userLanguage}
               selected={languages.source}
               options={SUPPORTED_LANGUAGES.filter((language) => language.supportsSpeech).map((language) => language.code)}
               onSelect={(value) => {
@@ -150,12 +162,12 @@ export default function HomeScreen() {
 
           <View className="bg-surface rounded-lg p-4 gap-2">
             <View className="flex-row justify-between items-center gap-4">
-              <Text className="text-sm text-muted">{copy.sourceLanguage}</Text>
+              <Text className="text-sm text-muted">{copy.userLanguage}</Text>
               <Text className="text-base font-semibold text-foreground">{getLanguageName(languages.source)}</Text>
             </View>
             <View className="h-px bg-border" />
             <View className="flex-row justify-between items-center gap-4">
-              <Text className="text-sm text-muted">{copy.targetLanguage}</Text>
+              <Text className="text-sm text-muted">{copy.interlocutorLanguage}</Text>
               <Text className="text-base font-semibold text-foreground">{getLanguageName(languages.target)}</Text>
             </View>
           </View>

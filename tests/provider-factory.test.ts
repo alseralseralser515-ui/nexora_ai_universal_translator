@@ -9,10 +9,10 @@ describe("ProviderFactory", () => {
     expect(factory.getMode()).toEqual({ speech: "mock", textToSpeech: "mock", translation: "mock" });
   });
 
-  it("falls back to mock speech and TTS if native modules are unavailable in tests", () => {
+  it("does not silently replace explicitly requested native providers with mocks", () => {
     const factory = new ProviderFactory();
     factory.initialize({ speechProvider: "native", textToSpeechProvider: "native", translationProvider: "mock" });
-    expect(factory.getMode().speech).toBe("mock");
-    expect(factory.getMode().textToSpeech).toBe("mock");
+    expect(factory.getMode().speech).toBe("native");
+    expect(factory.getMode().textToSpeech).toBe("native");
   });
 });

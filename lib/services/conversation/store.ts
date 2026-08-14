@@ -35,6 +35,7 @@ export interface ConversationStoreActions {
   
   // Session management
   createSession: (sourceLanguage: string, targetLanguage: string) => void;
+  restoreSession: (session: ConversationSession) => void;
   endSession: () => void;
   addMessage: (message: Omit<ConversationMessage, 'id' | 'timestamp'>) => void;
   clearMessages: () => void;
@@ -52,6 +53,12 @@ export interface ConversationStoreActions {
   setProviderMode: (mode: ProviderMode) => void;
   setMicrophoneEnabled: (enabled: boolean) => void;
   setPlaybackActive: (active: boolean) => void;
+  setSpeechRate: (rate: number) => void;
+  setAutoTtsPlayback: (enabled: boolean) => void;
+  setTranslationStyle: (style: "natural" | "literal" | "formal") => void;
+  setPhraseEndPauseMs: (duration: number) => void;
+  setLocalHistorySaving: (enabled: boolean) => void;
+  setPrivacyMode: (enabled: boolean) => void;
   
   // Error handling
   setError: (code: ConversationErrorCode, message: string, recoverable: boolean, details?: Record<string, unknown>) => void;
@@ -113,6 +120,12 @@ export const useConversationStore = create<ConversationStoreType>((set, get) => 
     isLoading: false,
     retryCount: 0,
     maxRetries: 3,
+    speechRate: 0.95,
+    autoTtsPlayback: true,
+    translationStyle: "natural",
+    phraseEndPauseMs: 1400,
+    localHistorySaving: true,
+    privacyMode: false,
 
     // State transitions
     transitionTo: async (newState: ConversationState) => {
@@ -140,6 +153,8 @@ export const useConversationStore = create<ConversationStoreType>((set, get) => 
         targetLanguage,
       });
     },
+
+    restoreSession: (session: ConversationSession) => set({ session, sourceLanguage: session.sourceLanguage, targetLanguage: session.targetLanguage }),
 
     endSession: () => {
       const { session } = get();
@@ -193,6 +208,12 @@ export const useConversationStore = create<ConversationStoreType>((set, get) => 
     setProviderMode: (mode: ProviderMode) => set({ providerMode: mode }),
     setMicrophoneEnabled: (enabled: boolean) => set({ microphoneEnabled: enabled }),
     setPlaybackActive: (active: boolean) => set({ playbackActive: active }),
+    setSpeechRate: (rate: number) => set({ speechRate: Math.min(2, Math.max(0.5, rate)) }),
+    setAutoTtsPlayback: (enabled: boolean) => set({ autoTtsPlayback: enabled }),
+    setTranslationStyle: (style: "natural" | "literal" | "formal") => set({ translationStyle: style }),
+    setPhraseEndPauseMs: (duration: number) => set({ phraseEndPauseMs: Math.min(5000, Math.max(0, duration)) }),
+    setLocalHistorySaving: (enabled: boolean) => set({ localHistorySaving: enabled }),
+    setPrivacyMode: (enabled: boolean) => set({ privacyMode: enabled }),
 
     // Error handling
     setError: (code: ConversationErrorCode, message: string, recoverable: boolean, details?: Record<string, unknown>) => {
@@ -267,6 +288,12 @@ export const useConversationStore = create<ConversationStoreType>((set, get) => 
         playbackActive: false,
         isLoading: false,
         retryCount: 0,
+        speechRate: 0.95,
+        autoTtsPlayback: true,
+        translationStyle: "natural",
+        phraseEndPauseMs: 1400,
+        localHistorySaving: true,
+        privacyMode: false,
       });
     },
   };
