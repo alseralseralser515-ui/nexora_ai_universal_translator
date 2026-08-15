@@ -1,9 +1,39 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../server/_core/index";
 
 describe("/api/translate", () => {
+  const originalProvider = process.env.TRANSLATION_PROVIDER;
+  const originalPublicProvider = process.env.EXPO_PUBLIC_TRANSLATION_PROVIDER;
+  const originalKey = process.env.OPENAI_API_KEY;
+
+  beforeEach(() => {
+    process.env.TRANSLATION_PROVIDER = "mock";
+    process.env.EXPO_PUBLIC_TRANSLATION_PROVIDER = "mock";
+    delete process.env.OPENAI_API_KEY;
+  });
+
+  afterEach(() => {
+    if (originalProvider === undefined) {
+      delete process.env.TRANSLATION_PROVIDER;
+    } else {
+      process.env.TRANSLATION_PROVIDER = originalProvider;
+    }
+
+    if (originalPublicProvider === undefined) {
+      delete process.env.EXPO_PUBLIC_TRANSLATION_PROVIDER;
+    } else {
+      process.env.EXPO_PUBLIC_TRANSLATION_PROVIDER = originalPublicProvider;
+    }
+
+    if (originalKey === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = originalKey;
+    }
+  });
+
   it("returns mock translations", async () => {
     const response = await request(createApp())
       .post("/api/translate")

@@ -1,3 +1,4 @@
+import { BackendLanguageDetectionProvider } from "./backend-language-detection";
 import { BackendTranslationProvider } from "./backend-translation";
 import type {
   LanguageDetectionProvider,
@@ -49,7 +50,10 @@ export class ProviderFactory {
         this.speechRecognition = new MockSpeechRecognitionProvider();
       }
     }
-    this.languageDetection = new MockLanguageDetectionProvider();
+    this.languageDetection =
+      this.config.translationProvider === "backend"
+        ? new BackendLanguageDetectionProvider(this.config.apiBaseUrl)
+        : new MockLanguageDetectionProvider();
     this.textToSpeech = new MockTextToSpeechProvider();
     if (this.config.textToSpeechProvider === "native") {
       try {

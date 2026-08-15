@@ -2,8 +2,7 @@ export type AppLocale = "uk" | "ru" | "en";
 
 export interface SupportedLanguage {
   code: string;
-  nativeName: string;
-  englishName: string;
+  names: Record<AppLocale, string>;
   locale: string;
   supportsSpeech: boolean;
   supportsTts: boolean;
@@ -14,20 +13,20 @@ export const DEFAULT_SOURCE_LANGUAGE = "auto";
 export const DEFAULT_TARGET_LANGUAGE = "en";
 
 export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
-  { code: "auto", nativeName: "Автовизначення", englishName: "Auto detect", locale: "uk-UA", supportsSpeech: true, supportsTts: false },
-  { code: "uk", nativeName: "Українська", englishName: "Ukrainian", locale: "uk-UA", supportsSpeech: true, supportsTts: true },
-  { code: "en", nativeName: "English", englishName: "English", locale: "en-US", supportsSpeech: true, supportsTts: true },
-  { code: "ru", nativeName: "Русский", englishName: "Russian", locale: "ru-RU", supportsSpeech: true, supportsTts: true },
-  { code: "pl", nativeName: "Polski", englishName: "Polish", locale: "pl-PL", supportsSpeech: true, supportsTts: true },
-  { code: "de", nativeName: "Deutsch", englishName: "German", locale: "de-DE", supportsSpeech: true, supportsTts: true },
-  { code: "fr", nativeName: "Francais", englishName: "French", locale: "fr-FR", supportsSpeech: true, supportsTts: true },
-  { code: "es", nativeName: "Espanol", englishName: "Spanish", locale: "es-ES", supportsSpeech: true, supportsTts: true },
-  { code: "it", nativeName: "Italiano", englishName: "Italian", locale: "it-IT", supportsSpeech: true, supportsTts: true },
-  { code: "tr", nativeName: "Turkce", englishName: "Turkish", locale: "tr-TR", supportsSpeech: true, supportsTts: true },
+  { code: "auto", names: { uk: "Автовизначення", ru: "Автоопределение", en: "Auto Detect" }, locale: "uk-UA", supportsSpeech: true, supportsTts: false },
+  { code: "uk", names: { uk: "Українська", ru: "Украинский", en: "Ukrainian" }, locale: "uk-UA", supportsSpeech: true, supportsTts: true },
+  { code: "ru", names: { uk: "Російська", ru: "Русский", en: "Russian" }, locale: "ru-RU", supportsSpeech: true, supportsTts: true },
+  { code: "en", names: { uk: "Англійська", ru: "Английский", en: "English" }, locale: "en-US", supportsSpeech: true, supportsTts: true },
+  { code: "pl", names: { uk: "Польська", ru: "Польский", en: "Polish" }, locale: "pl-PL", supportsSpeech: true, supportsTts: true },
+  { code: "de", names: { uk: "Німецька", ru: "Немецкий", en: "German" }, locale: "de-DE", supportsSpeech: true, supportsTts: true },
+  { code: "fr", names: { uk: "Французька", ru: "Французский", en: "French" }, locale: "fr-FR", supportsSpeech: true, supportsTts: true },
+  { code: "es", names: { uk: "Іспанська", ru: "Испанский", en: "Spanish" }, locale: "es-ES", supportsSpeech: true, supportsTts: true },
+  { code: "it", names: { uk: "Італійська", ru: "Итальянский", en: "Italian" }, locale: "it-IT", supportsSpeech: true, supportsTts: true },
+  { code: "tr", names: { uk: "Турецька", ru: "Турецкий", en: "Turkish" }, locale: "tr-TR", supportsSpeech: true, supportsTts: true },
 ];
 
-export function getLanguageName(code: string): string {
-  return SUPPORTED_LANGUAGES.find((language) => language.code === code)?.nativeName ?? code.toUpperCase();
+export function getLanguageName(code: string, interfaceLanguage: AppLocale = DEFAULT_INTERFACE_LANGUAGE): string {
+  return SUPPORTED_LANGUAGES.find((language) => language.code === code)?.names[interfaceLanguage] ?? code.toUpperCase();
 }
 
 export function isSupportedLanguage(code: string): boolean {

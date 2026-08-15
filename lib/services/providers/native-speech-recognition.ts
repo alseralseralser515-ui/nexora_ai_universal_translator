@@ -1,8 +1,7 @@
 import { Platform } from "react-native";
-import {
-  ExpoSpeechRecognitionModule,
-  type ExpoSpeechRecognitionErrorEvent,
-  type ExpoSpeechRecognitionResultEvent,
+import type {
+  ExpoSpeechRecognitionErrorEvent,
+  ExpoSpeechRecognitionResultEvent,
 } from "expo-speech-recognition";
 
 import type {
@@ -13,6 +12,23 @@ import type {
 } from "./interfaces";
 
 type Subscription = { remove: () => void };
+type ExpoSpeechRecognitionModuleType = typeof import("expo-speech-recognition")["ExpoSpeechRecognitionModule"];
+
+let cachedSpeechRecognitionModule: ExpoSpeechRecognitionModuleType | null = null;
+
+function getExpoSpeechRecognitionModule(): ExpoSpeechRecognitionModuleType | null {
+  if (Platform.OS === "web") return null;
+  if (cachedSpeechRecognitionModule) return cachedSpeechRecognitionModule;
+
+  try {
+    // This must stay lazy: Expo Go or an old iOS dev client may not include the native module.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    cachedSpeechRecognitionModule = require("expo-speech-recognition").ExpoSpeechRecognitionModule;
+    return cachedSpeechRecognitionModule;
+  } catch {
+    return null;
+  }
+}
 
 export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvider {
   private active = false;
@@ -22,7 +38,7 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
 
   isAvailable(): boolean {
     try {
-      return Platform.OS !== "web" && ExpoSpeechRecognitionModule.isRecognitionAvailable();
+      return getExpoSpeechRecognitionModule()?.isRecognitionAvailable() ?? false;
     } catch {
       return false;
     }
@@ -30,7 +46,11 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
 
   async requestPermissions(): Promise<ProviderPermissionResult> {
     try {
-      const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      const speechRecognition = getExpoSpeechRecognitionModule();
+      if (!speechRecognition) {
+        return { granted: false, canAskAgain: false, reason: "ExpoSpeechRecognition native module is unavailable" };
+      }
+      const permission = await speechRecognition.requestPermissionsAsync();
       return {
         granted: permission.granted,
         canAskAgain: permission.canAskAgain,
@@ -49,6 +69,11 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
       throw new Error("Native speech recognition is unavailable");
     }
 
+    const speechRecognition = getExpoSpeechRecognitionModule();
+    if (!speechRecognition) {
+      throw new Error("ExpoSpeechRecognition native module is unavailable");
+    }
+
     this.active = true;
 
     return new Promise<SpeechRecognitionResult>((resolve, reject) => {
@@ -57,7 +82,7 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
       let interimText = "";
       let confidence: number | undefined;
       const abort = () => {
-        ExpoSpeechRecognitionModule.abort();
+        speechRecognition.abort();
         finish(undefined, new Error("Speech recognition cancelled"));
       };
 
@@ -81,7 +106,7 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
         if (this.silenceTimer) clearTimeout(this.silenceTimer);
         this.silenceTimer = setTimeout(() => {
           if (lastText.trim()) {
-            ExpoSpeechRecognitionModule.stop();
+            speechRecognition.stop();
           }
         }, options.silenceTimeoutMs ?? 1400);
       };
@@ -120,9 +145,9 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
       };
 
       this.subscriptions = [
-        ExpoSpeechRecognitionModule.addListener("result", onResult),
-        ExpoSpeechRecognitionModule.addListener("error", onError),
-        ExpoSpeechRecognitionModule.addListener("end", () => {
+        speechRecognition.addListener("result", onResult),
+        speechRecognition.addListener("error", onError),
+        speechRecognition.addListener("end", () => {
           if (lastText.trim()) {
             finish({ text: lastText, locale: options.locale, isFinal: true, interimText, confidence });
           } else {
@@ -134,17 +159,19 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
       signal?.addEventListener("abort", abort, { once: true });
 
       this.timeoutTimer = setTimeout(() => {
-        ExpoSpeechRecognitionModule.abort();
+        speechRecognition.abort();
         finish(undefined, new Error("Speech recognition timed out"));
       }, options.timeoutMs ?? 15000);
 
       try {
-        ExpoSpeechRecognitionModule.start({
+        speechRecognition.start({
           lang: options.locale,
           interimResults: options.interimResults ?? true,
           continuous: false,
           addsPunctuation: true,
-          iosVoiceProcessingEnabled: true,
+          // expo-speech-recognition 3.1.3 can crash AVAudioEngine on physical iOS
+          // devices when voice processing changes the input format after setup.
+          iosVoiceProcessingEnabled: false,
         });
       } catch (error) {
         finish(undefined, error as Error);
@@ -153,14 +180,16 @@ export class NativeSpeechRecognitionProvider implements SpeechRecognitionProvide
   }
 
   async stopListening(): Promise<void> {
-    if (this.active) {
-      ExpoSpeechRecognitionModule.stop();
+    const speechRecognition = getExpoSpeechRecognitionModule();
+    if (this.active && speechRecognition) {
+      speechRecognition.stop();
     }
   }
 
   async abortListening(): Promise<void> {
-    if (this.active) {
-      ExpoSpeechRecognitionModule.abort();
+    const speechRecognition = getExpoSpeechRecognitionModule();
+    if (this.active && speechRecognition) {
+      speechRecognition.abort();
     }
     this.cleanup();
     this.active = false;

@@ -7,13 +7,13 @@
 
 import { create } from 'zustand';
 import { useMemo } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import {
   DEFAULT_INTERFACE_LANGUAGE,
   DEFAULT_SOURCE_LANGUAGE,
   DEFAULT_TARGET_LANGUAGE,
   type AppLocale,
 } from '@/lib/config/languages';
+import { createRuntimeId } from '@/lib/utils/runtime-id';
 import {
   ConversationState,
   ConversationStore,
@@ -126,7 +126,7 @@ export const useConversationStore = create<ConversationStoreType>((set, get) => 
     // Session management
     createSession: (sourceLanguage: string, targetLanguage: string) => {
       const session: ConversationSession = {
-        id: uuidv4(),
+        id: createRuntimeId(),
         startTime: Date.now(),
         messages: [],
         sourceLanguage,
@@ -154,7 +154,7 @@ export const useConversationStore = create<ConversationStoreType>((set, get) => 
 
       const message: ConversationMessage = {
         ...messageData,
-        id: uuidv4(),
+        id: createRuntimeId(),
         timestamp: Date.now(),
       };
 

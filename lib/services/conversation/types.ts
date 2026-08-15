@@ -96,6 +96,7 @@ export const VALID_TRANSITIONS: Record<ConversationState, ConversationState[]> =
   [ConversationState.IDLE]: [
     ConversationState.REQUESTING_PERMISSION,
     ConversationState.LISTENING,
+    ConversationState.SPEAKING,
     ConversationState.STOPPED,
     ConversationState.ERROR,
   ],
@@ -115,7 +116,7 @@ export const VALID_TRANSITIONS: Record<ConversationState, ConversationState[]> =
   [ConversationState.DETECTING_LANGUAGE]: [ConversationState.TRANSLATING, ConversationState.PAUSED, ConversationState.STOPPED, ConversationState.ERROR],
   [ConversationState.TRANSLATING]: [ConversationState.SPEAKING, ConversationState.PAUSED, ConversationState.STOPPED, ConversationState.ERROR],
   [ConversationState.SPEAKING]: [ConversationState.LISTENING, ConversationState.PAUSED, ConversationState.IDLE, ConversationState.STOPPED, ConversationState.ERROR],
-  [ConversationState.PAUSED]: [ConversationState.LISTENING, ConversationState.STOPPED, ConversationState.IDLE],
+  [ConversationState.PAUSED]: [ConversationState.LISTENING, ConversationState.SPEAKING, ConversationState.STOPPED, ConversationState.IDLE, ConversationState.ERROR],
   [ConversationState.RETRYING]: [ConversationState.REQUESTING_PERMISSION, ConversationState.LISTENING, ConversationState.IDLE, ConversationState.ERROR],
   [ConversationState.ERROR]: [ConversationState.RETRYING, ConversationState.IDLE, ConversationState.STOPPED],
   [ConversationState.STOPPED]: [ConversationState.IDLE],

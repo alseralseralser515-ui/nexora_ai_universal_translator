@@ -30,10 +30,20 @@ export class BackendTranslationProvider implements TranslationProvider {
       throw new Error(`Translation request failed (${response.status}): ${detail}`);
     }
 
-    const data = (await response.json()) as { translatedText?: string };
-    if (!data.translatedText) {
+    const data = await response.json();
+    const translatedText =
+      typeof data.translatedText === "string"
+        ? data.translatedText
+        : typeof data.output_text === "string"
+        ? data.output_text
+        : Array.isArray(data.output) && data.output.length > 0
+        ? String(data.output[0]?.content?.[0]?.text ?? "")
+        : "";
+
+    if (!translatedText.trim()) {
       throw new Error("Translation response did not include translatedText");
     }
-    return data.translatedText;
+
+    return translatedText.trim();
   }
 }

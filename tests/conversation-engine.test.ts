@@ -45,8 +45,10 @@ class FakeDetector implements LanguageDetectionProvider {
 }
 
 class FakeTranslation implements TranslationProvider {
+  calls: { text: string; sourceLanguage: string; targetLanguage: string }[] = [];
   constructor(private result: string | Error = "Привіт") {}
-  async translate() {
+  async translate(text: string, sourceLanguage: string, targetLanguage: string) {
+    this.calls.push({ text, sourceLanguage, targetLanguage });
     if (this.result instanceof Error) throw this.result;
     return this.result;
   }
@@ -172,6 +174,85 @@ describe("ConversationEngine", () => {
     useConversationStore.getState().reset();
     await new ConversationEngine({ providerFactory: factory({ tts: new FakeTts(true) }) }).startConversation();
     expect(useConversationStore.getState().error?.code).toBe("text_to_speech_failed");
+  });
+});
+
+describe("runtime controls and voice chain", () => {
+  it("requests both permissions and surfaces a denied state", async () => {
+    const speech: SpeechRecognitionProvider = {
+      isAvailable: () => true,
+      requestPermissions: async () => ({ granted: false, canAskAgain: false, reason: "denied" }),
+      startListening: async () => ({ text: "", locale: "uk-UA", isFinal: true }),
+      stopListening: async () => undefined,
+      abortListening: async () => undefined,
+    };
+
+    await new ConversationEngine({ providerFactory: factory({ speech }) }).startConversation();
+
+    expect(useConversationStore.getState().error?.code).toBe("microphone_permission_denied");
+    expect(useConversationStore.getState().state).toBe(ConversationState.ERROR);
+  });
+
+  it("uses detected source language and the selected target in Auto Detect mode", async () => {
+    const translation = new FakeTranslation("Hello");
+    useConversationStore.getState().setSourceLanguage("auto");
+    useConversationStore.getState().setTargetLanguage("en");
+    const engine = new ConversationEngine({
+      providerFactory: factory({ detector: new FakeDetector("ru-RU"), translation }),
+    });
+
+    await engine.startConversation();
+
+    expect(translation.calls[0]).toMatchObject({ sourceLanguage: "ru", targetLanguage: "en" });
+    expect(useConversationStore.getState().detectedLanguage).toBe("ru");
+  });
+
+  it("repeats the last translation and returns to the previous idle state", async () => {
+    const tts = new FakeTts();
+    const engine = new ConversationEngine({ providerFactory: factory({ tts }) });
+    await engine.startConversation();
+    await engine.stopConversation();
+
+    await engine.repeatLast();
+
+    expect(tts.speakCalls).toBe(2);
+    expect(useConversationStore.getState().state).toBe(ConversationState.IDLE);
+  });
+
+  it("resumes recognition only after TTS and never listens while playback is active", async () => {
+    let listenCalls = 0;
+    const speech: SpeechRecognitionProvider = {
+      isAvailable: () => true,
+      requestPermissions: async () => ({ granted: true }),
+      startListening: async (_options: { locale: string }, signal?: AbortSignal) => {
+        listenCalls += 1;
+        if (listenCalls === 1) {
+          return { text: "Hello", locale: "en-US", isFinal: true };
+        }
+        return new Promise<SpeechRecognitionResult>((_resolve, reject) => {
+          signal?.addEventListener("abort", () => reject(new Error("Speech recognition cancelled")), { once: true });
+        });
+      },
+      stopListening: async () => undefined,
+      abortListening: async () => undefined,
+    };
+    const tts = new FakeTts();
+    const nativeFactory = factory({ speech, tts }) as ProviderFactory;
+    vi.spyOn(nativeFactory, "getMode").mockReturnValue({
+      speech: "native",
+      textToSpeech: "mock",
+      translation: "mock",
+    });
+    const engine = new ConversationEngine({ providerFactory: nativeFactory });
+
+    const run = engine.startConversation();
+    await vi.waitFor(() => expect(listenCalls).toBe(2));
+    expect(tts.microphoneStates).toEqual([false]);
+    expect(useConversationStore.getState().playbackActive).toBe(false);
+
+    await engine.pauseConversation();
+    await run;
+    expect(useConversationStore.getState().state).toBe(ConversationState.PAUSED);
   });
 });
 

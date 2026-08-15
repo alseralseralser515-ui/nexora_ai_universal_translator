@@ -5,7 +5,7 @@
  * Handles state transitions, operation tracking, and error recovery
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { createRuntimeId } from '@/lib/utils/runtime-id';
 import {
   ConversationState,
   ConversationStore,
@@ -117,7 +117,7 @@ export class ConversationStateMachine {
     }
 
     const controller = new AbortController();
-    const operationId = uuidv4();
+    const operationId = createRuntimeId();
 
     // Set up timeout
     const timeoutId = setTimeout(() => {
