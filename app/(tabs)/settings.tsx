@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
@@ -7,11 +7,13 @@ import { t } from "@/lib/localization/translations";
 import { useConversationStore, useConversationLanguages } from "@/lib/services/conversation/store";
 
 const SETTINGS_KEY = "nexora.settings.v1";
+const HISTORY_KEY = "nexora.history.v1";
 
 export default function SettingsScreen() {
   const store = useConversationStore();
   const languages = useConversationLanguages();
   const copy = t(languages.interfaceLanguage);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     void AsyncStorage.getItem(SETTINGS_KEY).then((raw) => {
@@ -30,17 +32,26 @@ export default function SettingsScreen() {
         if (typeof saved.privacyMode === "boolean") store.setPrivacyMode(saved.privacyMode);
       } catch {
         // Ignore malformed local settings and retain safe defaults.
+      } finally {
+        setHydrated(true);
       }
     });
+    void AsyncStorage.getItem(SETTINGS_KEY).then((raw) => { if (!raw) setHydrated(true); });
+  // The full store object is intentionally used for one-time settings hydration.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
+    if (store.privacyMode) void AsyncStorage.removeItem(HISTORY_KEY);
     const { session: _session, ...settings } = store;
     void AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  }, [store.sourceLanguage, store.targetLanguage, store.autoDetectLanguage, store.interfaceLanguage, store.speechRate, store.autoTtsPlayback, store.translationStyle, store.phraseEndPauseMs, store.localHistorySaving, store.privacyMode]);
+  // Store actions are stable; the listed state fields intentionally control persistence.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.sourceLanguage, store.targetLanguage, store.autoDetectLanguage, store.interfaceLanguage, store.speechRate, store.autoTtsPlayback, store.translationStyle, store.phraseEndPauseMs, store.localHistorySaving, store.privacyMode, hydrated]);
 
   const clearLocalData = async () => {
-    await AsyncStorage.removeItem(SETTINGS_KEY);
+    await AsyncStorage.multiRemove([SETTINGS_KEY, HISTORY_KEY]);
     store.clearMessages();
     store.setRecognizedText("");
     store.setTranslatedText("");

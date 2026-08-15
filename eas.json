@@ -13,7 +13,7 @@
       "env": {
         "EXPO_PUBLIC_SPEECH_PROVIDER": "native",
         "EXPO_PUBLIC_TTS_PROVIDER": "native",
-        "EXPO_PUBLIC_TRANSLATION_PROVIDER": "mock"
+        "EXPO_PUBLIC_TRANSLATION_PROVIDER": "backend"
       }
     },
     "preview": {
@@ -24,7 +24,7 @@
       "env": {
         "EXPO_PUBLIC_SPEECH_PROVIDER": "native",
         "EXPO_PUBLIC_TTS_PROVIDER": "native",
-        "EXPO_PUBLIC_TRANSLATION_PROVIDER": "mock"
+        "EXPO_PUBLIC_TRANSLATION_PROVIDER": "backend"
       }
     },
     "production": {

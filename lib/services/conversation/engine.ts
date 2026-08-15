@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { createLocalId } from "@/lib/utils";
 
 import { getLanguageLocale, isSupportedLanguage, normalizeLanguageCode } from "@/lib/config/languages";
 import { audioSessionManager } from "../audio/audio-session-manager";
@@ -141,7 +141,7 @@ export class ConversationEngine {
     const store = this.store.getState();
     const last = store.session?.messages.at(-1);
     if (!last || store.playbackActive) return;
-    const operationId = uuidv4();
+    const operationId = createLocalId("operation");
     this.stopped = false;
     store.setActiveOperationId(operationId);
     try {
@@ -162,7 +162,7 @@ export class ConversationEngine {
   }
 
   private async runUtterance(): Promise<void> {
-    const operationId = uuidv4();
+    const operationId = createLocalId("operation");
     const store = this.store.getState();
     store.setActiveOperationId(operationId);
     store.clearError();
@@ -311,7 +311,9 @@ export class ConversationEngine {
     const translateController = store.startOperation("translate");
     const translatedText = await this.providerFactory
       .getTranslation()
-      .translate(recognized.text, direction.sourceLanguage, direction.targetLanguage, translateController.signal);
+      .translate(recognized.text, direction.sourceLanguage, direction.targetLanguage, translateController.signal, {
+        style: store.translationStyle,
+      });
     store.completeOperation();
     this.assertFresh(operationId);
 

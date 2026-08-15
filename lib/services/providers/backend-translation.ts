@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { normalizeLanguageCode } from "@/lib/config/languages";
-import type { LanguageDetectionProvider, TranslationProvider } from "./interfaces";
+import type { LanguageDetectionProvider, TranslationOptions, TranslationProvider } from "./interfaces";
 
 function getDefaultApiBaseUrl(): string {
   const configured = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -38,12 +38,12 @@ export class BackendLanguageDetectionProvider implements LanguageDetectionProvid
 export class BackendTranslationProvider implements TranslationProvider {
   constructor(private readonly apiBaseUrl = getDefaultApiBaseUrl()) {}
 
-  async translate(text: string, sourceLanguage: string, targetLanguage: string, signal?: AbortSignal): Promise<string> {
+  async translate(text: string, sourceLanguage: string, targetLanguage: string, signal?: AbortSignal, options?: TranslationOptions): Promise<string> {
     if (sourceLanguage === targetLanguage) return text;
     const response = await fetch(`${this.apiBaseUrl}/api/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, sourceLanguage, targetLanguage }),
+      body: JSON.stringify({ text, sourceLanguage, targetLanguage, style: options?.style ?? "natural" }),
       signal,
     });
 

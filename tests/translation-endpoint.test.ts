@@ -16,8 +16,27 @@ describe("/api/translate", () => {
     });
   });
 
+  it("accepts an explicit translation style while preserving the mock response contract", async () => {
+    const response = await request(createApp())
+      .post("/api/translate")
+      .send({ text: "Привіт", sourceLanguage: "uk", targetLanguage: "en", style: "natural" })
+      .expect(200);
+
+    expect(response.body.provider).toBe("mock");
+    expect(response.body.translatedText).toContain("uk -> en");
+  });
+
   it("rejects invalid payloads", async () => {
     await request(createApp()).post("/api/translate").send({ text: "" }).expect(400);
+  });
+
+  it("detects language through the backend endpoint in explicit test mode", async () => {
+    const response = await request(createApp())
+      .post("/api/detect-language")
+      .send({ text: "Привіт" })
+      .expect(200);
+
+    expect(response.body).toEqual({ language: "uk", provider: "mock" });
   });
 
   it("reports missing server API key for real provider mode", async () => {

@@ -1,18 +1,18 @@
 # NEXORA AI Universal Translator — native release workflow
 
-The mobile client must never contain an OpenAI or other private API key. Production translation is routed through `EXPO_PUBLIC_API_BASE_URL`; the secure backend owns provider credentials.
+The mobile client must never contain an OpenAI or other private API key. Development, preview, and production translation are routed through `EXPO_PUBLIC_API_BASE_URL`; the secure backend owns provider credentials. Mock mode is reserved for explicit automated tests or local provider-development work.
 
 ## Development builds
 
 ```sh
-EXPO_PUBLIC_SPEECH_PROVIDER=native EXPO_PUBLIC_TTS_PROVIDER=native EXPO_PUBLIC_TRANSLATION_PROVIDER=mock eas build --profile development --platform ios
-EXPO_PUBLIC_SPEECH_PROVIDER=native EXPO_PUBLIC_TTS_PROVIDER=native EXPO_PUBLIC_TRANSLATION_PROVIDER=mock eas build --profile development --platform android
+EXPO_PUBLIC_SPEECH_PROVIDER=native EXPO_PUBLIC_TTS_PROVIDER=native EXPO_PUBLIC_TRANSLATION_PROVIDER=backend eas build --profile development --platform ios
+EXPO_PUBLIC_SPEECH_PROVIDER=native EXPO_PUBLIC_TTS_PROVIDER=native EXPO_PUBLIC_TRANSLATION_PROVIDER=backend eas build --profile development --platform android
 ```
 
 ## Installable Android preview APK
 
 ```sh
-EXPO_PUBLIC_SPEECH_PROVIDER=native EXPO_PUBLIC_TTS_PROVIDER=native EXPO_PUBLIC_TRANSLATION_PROVIDER=mock eas build --profile preview --platform android
+EXPO_PUBLIC_SPEECH_PROVIDER=native EXPO_PUBLIC_TTS_PROVIDER=native EXPO_PUBLIC_TRANSLATION_PROVIDER=backend eas build --profile preview --platform android
 ```
 
 ## Local device fallback

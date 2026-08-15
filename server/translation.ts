@@ -5,6 +5,7 @@ const translationRequestSchema = z.object({
   text: z.string().trim().min(1).max(4000),
   sourceLanguage: z.string().trim().min(2).max(16),
   targetLanguage: z.string().trim().min(2).max(16),
+  style: z.enum(["natural", "literal", "formal"]).default("natural"),
 });
 const detectionRequestSchema = z.object({ text: z.string().trim().min(1).max(4000) });
 
@@ -39,7 +40,7 @@ export function registerTranslationRoutes(app: Express): void {
     }
 
     const provider = process.env.TRANSLATION_PROVIDER ?? (isTestRuntime() ? "mock" : "openai");
-    const { text, sourceLanguage, targetLanguage } = parsed.data;
+    const { text, sourceLanguage, targetLanguage, style } = parsed.data;
     if (sourceLanguage === targetLanguage) {
       res.json({ translatedText: text, provider: "identity" });
       return;
@@ -51,7 +52,7 @@ export function registerTranslationRoutes(app: Express): void {
 
     try {
       const translatedText = await openAiText(
-        `Translate the following text from ${sourceLanguage} to ${targetLanguage}. Return only the translation, with no commentary, markdown, or quotes.\n\n${text}`,
+        `Translate the following text from ${sourceLanguage} to ${targetLanguage}. Use a ${style} translation style. Preserve meaning and conversational context. Return only the translation, with no commentary, markdown, or quotes.\n\n${text}`,
       );
       res.json({ translatedText, provider: "openai" });
     } catch (error) {

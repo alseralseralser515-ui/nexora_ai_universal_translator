@@ -32,11 +32,33 @@ export default function HomeScreen() {
   const engineRef = useRef<ConversationEngine | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const historyKey = "nexora.history.v1";
+  const settingsKey = "nexora.settings.v1";
+  const [historyHydrated, setHistoryHydrated] = useState(false);
 
   useEffect(() => {
-    void AsyncStorage.getItem(historyKey).then((raw) => {
-      if (!raw || store.privacyMode) return;
-      try { store.restoreSession(JSON.parse(raw)); } catch { /* Ignore malformed local history. */ }
+    void AsyncStorage.getItem(settingsKey).then(async (settingsRaw) => {
+      if (settingsRaw) {
+        try {
+          const saved = JSON.parse(settingsRaw) as Partial<typeof store>;
+          if (saved.sourceLanguage) store.setSourceLanguage(saved.sourceLanguage);
+          if (saved.targetLanguage) store.setTargetLanguage(saved.targetLanguage);
+          if (typeof saved.autoDetectLanguage === "boolean") store.setAutoDetectLanguage(saved.autoDetectLanguage);
+          if (saved.interfaceLanguage) store.setInterfaceLanguage(saved.interfaceLanguage as AppLocale);
+          if (typeof saved.speechRate === "number") store.setSpeechRate(saved.speechRate);
+          if (typeof saved.autoTtsPlayback === "boolean") store.setAutoTtsPlayback(saved.autoTtsPlayback);
+          if (saved.translationStyle) store.setTranslationStyle(saved.translationStyle);
+          if (typeof saved.phraseEndPauseMs === "number") store.setPhraseEndPauseMs(saved.phraseEndPauseMs);
+          if (typeof saved.localHistorySaving === "boolean") store.setLocalHistorySaving(saved.localHistorySaving);
+          if (typeof saved.privacyMode === "boolean") store.setPrivacyMode(saved.privacyMode);
+        } catch { /* Ignore malformed settings and retain defaults. */ }
+      }
+      const privacyMode = useConversationStore.getState().privacyMode;
+      const historyEnabled = useConversationStore.getState().localHistorySaving;
+      const raw = await AsyncStorage.getItem(historyKey);
+      if (raw && historyEnabled && !privacyMode) {
+        try { useConversationStore.getState().restoreSession(JSON.parse(raw)); } catch { /* Ignore malformed local history. */ }
+      }
+      setHistoryHydrated(true);
     });
 
     ProviderFactory.getInstance().initialize({
@@ -67,12 +89,14 @@ export default function HomeScreen() {
       appStateSubscription.remove();
       void engineRef.current?.cleanup();
     };
+  // The full store object is intentionally read inside this one-time hydration effect.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setProviderMode]);
 
   useEffect(() => {
-    if (!store.localHistorySaving || store.privacyMode || !session) return;
+    if (!historyHydrated || !store.localHistorySaving || store.privacyMode || !session) return;
     void AsyncStorage.setItem(historyKey, JSON.stringify(session));
-  }, [session, store.localHistorySaving, store.privacyMode]);
+  }, [session, store.localHistorySaving, store.privacyMode, historyHydrated]);
 
   const handleMicrophonePress = async () => {
     if (!engineRef.current) return;

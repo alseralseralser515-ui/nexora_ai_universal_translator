@@ -12,7 +12,7 @@ export interface LanguageDetectionProvider {
 }
 
 export interface TranslationProvider {
-  translate(text: string, sourceLanguage: string, targetLanguage: string, signal?: AbortSignal): Promise<string>;
+  translate(text: string, sourceLanguage: string, targetLanguage: string, signal?: AbortSignal, options?: TranslationOptions): Promise<string>;
 }
 
 export interface TextToSpeechProvider {
@@ -30,6 +30,10 @@ export interface ProviderFactoryConfig {
   speechRate?: number;
   timeout?: number;
   retryAttempts?: number;
+}
+
+export interface TranslationOptions {
+  style?: "natural" | "literal" | "formal";
 }
 
 export interface ProviderPermissionResult {
